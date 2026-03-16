@@ -1,0 +1,112 @@
+const express = require("express");
+const router = express.Router();
+const db = require("../db");
+
+
+// GET ALL
+router.get("/", async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM attractions");
+    res.status(200).json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// GET BY ID
+router.get("/:id", async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM attractions WHERE id = ?",
+      [req.params.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Attraction not found" });
+    }
+
+    res.status(200).json(rows[0]);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// POST CREATE
+router.post("/", async (req, res) => {
+  try {
+
+    const { name, detail, coverimage, latitude, longitude, likes } = req.body;
+
+    const [result] = await db.query(
+      `INSERT INTO attractions
+      (name, detail, coverimage, latitude, longitude, likes)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [name, detail, coverimage, latitude, longitude, likes]
+    );
+
+    res.status(201).json({
+      id: result.insertId,
+      name,
+      detail,
+      coverimage,
+      latitude,
+      longitude,
+      likes
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// PUT UPDATE
+router.put("/:id", async (req, res) => {
+  try {
+
+    const { name, detail, coverimage, latitude, longitude, likes } = req.body;
+
+    const [result] = await db.query(
+      `UPDATE attractions
+      SET name=?, detail=?, coverimage=?, latitude=?, longitude=?, likes=?
+      WHERE id=?`,
+      [name, detail, coverimage, latitude, longitude, likes, req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Attraction not found" });
+    }
+
+    res.status(200).json({ message: "Attraction updated" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// DELETE
+router.delete("/:id", async (req, res) => {
+  try {
+
+    const [result] = await db.query(
+      "DELETE FROM attractions WHERE id=?",
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Attraction not found" });
+    }
+
+    res.status(200).json({ message: "Attraction deleted" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+module.exports = router;
